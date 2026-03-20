@@ -35,7 +35,7 @@ DETECT_DIR = os.path.join(MODELS_DIR, "detect")
 
 # Parámetros de entrenamiento
 WEIGHTS_DIR = os.path.join(MODELS_DIR, "weights")
-MODEL_BASE = os.path.join(WEIGHTS_DIR, "yolov8m.pt")
+MODEL_BASE = os.path.join(WEIGHTS_DIR, "yolov8m-seg.pt")
 EPOCHS = 50
 IMG_SIZE = 640
 BATCH_SIZE = 16

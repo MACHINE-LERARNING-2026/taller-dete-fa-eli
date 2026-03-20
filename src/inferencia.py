@@ -2,7 +2,7 @@
 INFERENCIA – Taller YOLO Detección de Casas
 ============================================
 API FastAPI + script standalone para ejecutar detección de casas
-usando el modelo entrenado 'models/house-yolo.pt'.
+usando el modelo entrenado 'models/postes-yolo.pt'.
 
 Uso como API:
     uvicorn src.inferencia:app --reload --port 8000
@@ -31,7 +31,7 @@ from src.utils import (
 # =====================================================
 
 # Ruta por defecto al modelo entrenado (relativa a la raíz del proyecto)
-RUTA_MODELO_DEFAULT = Path("models/house-yolo.pt")
+RUTA_MODELO_DEFAULT = Path("models/postes-yolo.pt")
 
 # Parámetros de inferencia
 UMBRAL_CONFIANZA = 0.70
@@ -88,7 +88,7 @@ def cargar_modelo(ruta_pesos: str | Path = RUTA_MODELO_DEFAULT) -> YOLO:
         raise FileNotFoundError(
             f"No se encontró el archivo de pesos en: {ruta_pesos}\n"
             f"Asegúrate de haber entrenado el modelo (ver src/train_yolo.py) "
-            f"y que los pesos estén en 'models/house-yolo.pt'."
+            f"y que los pesos estén en 'models/postes-yolo.pt'."
         )
 
     # Usar caché para no recargar el modelo en cada petición
