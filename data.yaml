@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['Casa']
+
+roboflow:
+  workspace: fabians-workspace-rryj9
+  project: taller2_casas
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/fabians-workspace-rryj9/taller2_casas/dataset/2

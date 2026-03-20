@@ -1,0 +1,30 @@
+# =====================================================
+# TALLER YOLO – Detección de Casas
+# requirements.txt
+# =====================================================
+# Instalar con:  pip install -r requirements.txt
+# Python >= 3.10 recomendado
+
+# ── Framework de detección de objetos ─────────────────
+ultralytics>=8.0.0
+
+# ── API web ───────────────────────────────────────────
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+
+# ── Procesamiento de imágenes ─────────────────────────
+opencv-python-headless>=4.7.0
+Pillow>=9.5.0
+numpy>=1.23.0
+
+# ── Utilidades ────────────────────────────────────────
+pyyaml>=6.0
+tqdm>=4.60.0
+
+# ── Notas ─────────────────────────────────────────────
+# Si necesitas GPU (CUDA):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# Si usas entorno local con pantalla (no servidor):
+#   reemplaza opencv-python-headless por opencv-python
