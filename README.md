@@ -69,6 +69,7 @@ Clases: ['Fachada', 'Poste'] (2 clases)
 Origen: dataset exportado desde Roboflow
 
 Nota: El dataset usado en el último entranamiento con el que se obtuvieron los pesos postes-yolo.pt de este repositorio, se encuentra en la siguiente ruta: https://uredu-my.sharepoint.com/:u:/g/personal/fabian_aldana_urosario_edu_co/IQBNO4gwcOBSR72LrREialruAe3XlETXBs_XNjg445eaFxE?e=FFqmBk 
+
 Se comparte el enlace, debido a que por el tamaño no fue posible cargarlos a este repositorio. 
 
 3. Requisitos
