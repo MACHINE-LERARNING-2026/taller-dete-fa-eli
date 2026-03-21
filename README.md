@@ -37,20 +37,35 @@ Nota: Los comandos en este README se muestran con python / pip. Si en tu entorno
 2. Estructura del Proyecto
 
 taller-yolo-fachadas/
+
 ├── data.yaml               # Descriptor del dataset (rutas train/val/test, nc, names)
+
 ├── src/
+
 │   ├── train_yolo.py       # Script de entrenamiento
+
 │   ├── inferencia.py       # Servicio FastAPI para inferencia y eliminación de postes
+
 │   └── utils.py            # Funciones utilitarias (Dibujar Conteo Umbral, Dibuja bounding boxes,
+
 │                           # parseo de resultados, enmascaramiento de postes, integración con LaMa, etc.)
+
 ├── models/
+
 │   └── detect/             # Carpeta que genera Ultralytics durante el training y contiene la matriz de confusión y resultados de entrenamiento
+
 │   └── weights/            # Contiene los pesos preentrenados de yolov8m
+
 │   └── fachadas-yolo.pt    # Resultado de pesos del entrenamiento que serán usados por la API
+
 ├── train/                  # Imágenes y etiquetas de entrenamiento generadas por Roboflow
+
 ├── valid/                  # Imágenes y etiquetas de validación generadas por Roboflow
+
 ├── requirements.txt        # Dependencias y librerías necesarias para la aplicación
+
 └── README.md               # Descripción del repositorio
+
 
 Descripción del dataset y origen de imágenes
 
