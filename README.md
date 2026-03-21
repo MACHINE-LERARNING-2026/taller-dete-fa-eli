@@ -202,9 +202,7 @@ A continuación, se observa la matriz de confusión obtenida:
 
 En esta matriz se puede apreciar que el modelo logra identificar correctamente un número considerable de instancias de fachadas y postes. Sin embargo, también se observan falsos positivos, donde el modelo predice la presencia de una clase cuando en realidad corresponde al fondo de la imagen, lo que indica cierta confusión entre estructuras del entorno y las clases de interés. Asimismo, se registran falsos negativos, es decir, casos en los que el modelo no logra detectar un objeto presente y lo clasifica como background. En conjunto, estos resultados sugieren que, aunque el modelo presenta un desempeño razonable, todavía existe margen de mejora en la discriminación entre las clases objetivo y el fondo.
 
-![WhatsApp Image 2026-03-21 at 14 54 55](https://github.com/user-attachments/assets/83f5cf7d-08cb-4085-ac8c-bde578a75c6a)
-
-![WhatsApp Image 2026-03-21 at 14 57 18](https://github.com/user-attachments/assets/55245cfc-397c-4b2e-8492-01eb1439099e)
+![WhatsApp Image 2026-03-21 at 14 57 18](https://github.com/user-attachments/assets/f9f034f2-d3e6-40a7-8ebe-f99ee5f33845)
 
 7. Limitaciones y pasos futuros recomendados
 
