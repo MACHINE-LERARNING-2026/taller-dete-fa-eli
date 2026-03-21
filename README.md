@@ -10,12 +10,15 @@ Contenido:
 4. Descarga del repositorio
 
 4.1. Clonar/Descargar el repositorio
+
 4.2. Descargar como .zip
 
 5. Ejecución
 
 5.1. Crear y activar un entorno virtual
+
 5.2. Entrenamiento (opcional)
+
 5.3. Iniciar servicios de FastAPI
 
 6. Resultados (métricas) y ejemplos
