@@ -76,13 +76,14 @@ test/images, test/labels
 3. Requisitos
 Para el correcto funcionamiento del proyecto es necesario:
 
-
 Python 3.9 o superior
 pip actualizado
 GPU opcional (para entrenar más rápido y acelerar la inferencia de LaMa)
 
 Para validar la versión de Python usa el siguiente comando:
+```
 bashpython --version
+```
 Nota: Para GPU, sigue las instrucciones de la web oficial para instalar la build de torch compatible con tu versión de CUDA.
 
 4. Descarga del repositorio
@@ -140,11 +141,11 @@ Desde un CMD de Windows y ubicados sobre la raíz del repositorio, ejecuta el si
 ```
 Posterior a la confirmación de la ejecución, abre la URL http://127.0.0.1:8000/docs desde tu navegador de preferencia. Esta URL expone los siguientes métodos de la API:
 
-GET /                         Información de la API
-
-POST /detectar_fachadas_postes  Recibe una imagen y devuelve otra imagen con las detecciones de fachadas y postes realizadas
-
-POST /borrar_postes           Recibe una imagen, detecta los postes, los enmascara y aplica LaMa para eliminarlos, devolviendo la imagen final sin postes
+```
+GET  /                            # Información de la API
+POST /detectar_fachadas_postes    # Recibe una imagen y devuelve otra imagen con las detecciones de fachadas y postes realizadas
+POST /borrar_postes               # Recibe una imagen, detecta los postes, los enmascara y aplica LaMa para eliminarlos, devolviendo la imagen final sin postes
+```
 
 Ejemplo de POST /detectar_fachadas_postes:
 
@@ -158,6 +159,10 @@ Despliega el método POST /borrar_postes y da click en Try it out, selecciona el
 - Generación de una máscara binaria sobre las regiones de los postes detectados.
 - Procesamiento con LaMa para reconstruir el fondo en las zonas enmascaradas.
 - Retorno de la imagen resultante sin los postes.
+
+![WhatsApp Image 2026-03-21 at 14 57 18](https://github.com/user-attachments/assets/f9f034f2-d3e6-40a7-8ebe-f99ee5f33845)
+
+![WhatsApp Image 2026-03-21 at 14 54 55](https://github.com/user-attachments/assets/9dc27162-1f3d-4027-9e66-e81ec3d6adcc)
 
 6. Resultados (métricas) y ejemplos de detección
 
@@ -189,8 +194,6 @@ A continuación, se observa la matriz de confusión obtenida:
 <img width="3000" height="2250" alt="confusion_matrix" src="https://github.com/user-attachments/assets/b2e6ea06-cfcb-452c-988e-05bfbb9afbfe" />
 
 En esta matriz se puede apreciar que el modelo logra identificar correctamente un número considerable de instancias de fachadas y postes. Sin embargo, también se observan falsos positivos, donde el modelo predice la presencia de una clase cuando en realidad corresponde al fondo de la imagen, lo que indica cierta confusión entre estructuras del entorno y las clases de interés. Asimismo, se registran falsos negativos, es decir, casos en los que el modelo no logra detectar un objeto presente y lo clasifica como background. En conjunto, estos resultados sugieren que, aunque el modelo presenta un desempeño razonable, todavía existe margen de mejora en la discriminación entre las clases objetivo y el fondo.
-
-![WhatsApp Image 2026-03-21 at 14 57 18](https://github.com/user-attachments/assets/f9f034f2-d3e6-40a7-8ebe-f99ee5f33845)
 
 7. Limitaciones y pasos futuros recomendados
 
