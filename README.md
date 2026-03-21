@@ -67,11 +67,6 @@ Descripción del dataset y origen de imágenes
 Archivo descriptor: data.yaml (contiene rutas a train, val, test y el número de clases nc).
 Clases: ['Fachada', 'Poste'] (2 clases)
 Origen: dataset exportado desde Roboflow
-Estructura esperada de carpetas (relativa a la raíz del repo):
-
-train/images, train/labels
-valid/images, valid/labels
-test/images, test/labels
 
 3. Requisitos
 Para el correcto funcionamiento del proyecto es necesario:
