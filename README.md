@@ -48,11 +48,9 @@ taller-yolo-fachadas/
 
 │   └── utils.py            # Funciones utilitarias (Dibujar Conteo Umbral, Dibuja bounding boxes,
 
-│                           # parseo de resultados, enmascaramiento de postes, integración con LaMa, etc.)
-
 ├── models/
 
-│   └── detect/             # Carpeta que genera Ultralytics durante el training y contiene la matriz de confusión y resultados de entrenamiento
+│   └── detect/             # Carpeta que genera Ultralytics durante el training y contiene los resultados de entrenamiento
 
 │   └── weights/            # Contiene los pesos preentrenados de yolov8m
 
