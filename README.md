@@ -27,6 +27,7 @@ Contenido:
 --------------------------------------------------------
 
 1. Descripción
+
 Este proyecto implementa una API para detección de fachadas y postes usando YOLO (Ultralytics YOLOv8) con arquitectura modular en Python. Adicionalmente, integra LaMa (Large Mask inpainting) para la eliminación automática de postes detectados en las imágenes.
 
 El sistema permite:
@@ -98,7 +99,7 @@ Nota: Para GPU, sigue las instrucciones de la web oficial para instalar la build
 4. Descarga del repositorio
 
 4.1 Clonar/Descargar el repositorio
-bashgit clone https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git
+´´´bashgit clone https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git
 cd taller-dete-fa-eli
 4.2 Descargar como .zip
 Desde la interfaz web del repositorio https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git descarga el ZIP, descomprímelo y entra en la carpeta:
