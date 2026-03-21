@@ -1,12 +1,12 @@
 """
-UTILIDADES – Taller YOLO Detección de Casas
+UTILIDADES – Taller YOLO Deteccion de Casas
 ============================================
 Funciones auxiliares para:
-  - Dibujar bounding boxes sobre imágenes
-  - Dibujar máscaras de segmentación
-  - Convertir formatos de anotación
+  - Dibujar bounding boxes sobre imagenes
+  - Dibujar mascaras de segmentacion
+  - Convertir formatos de anotacion
   - Visualizar resultados
-  - Parsear resultados del modelo YOLO (detección y segmentación)
+  - Parsear resultados del modelo YOLO (deteccion y segmentacion)
 """
 
 import cv2
@@ -15,26 +15,32 @@ from PIL import Image
 
 
 # =====================================================
-# CONSTANTES DE VISUALIZACIÓN
+# CONSTANTES DE VISUALIZACION
 # =====================================================
 
-# Color principal para las cajas (verde lima, visible sobre mayoría de fondos)
-COLOR_CAJA          = (0, 200, 80)     # BGR para OpenCV
+# Color principal para las cajas
+COLOR_CAJA: dict[int, tuple[int, int, int]] = {
+    0: (200, 100,  0),   # Fachada – Azul
+    1: (0,   100, 200),  # Poste   – Naranja
+}
 COLOR_TEXTO         = (255, 255, 255)  # Blanco
-COLOR_FONDO_TEXTO   = (0, 200, 80)     # Mismo verde para el fondo de la etiqueta
+COLOR_FONDO_TEXTO: dict[int, tuple[int, int, int]] = {  # Mismo color de acuerdo a la etiqueta detectada
+    0: (200, 100,  0),   # Fachada – Azul
+    1: (0,   100, 200),  # Poste   – Naranja
+}    
 GROSOR_CAJA         = 2                # Píxeles de grosor de la caja
 FUENTE_CV2          = cv2.FONT_HERSHEY_SIMPLEX
 ESCALA_FUENTE       = 0.6
-GROSOR_FUENTE       = 2
+GROSOR_FUENTE       = 1
 
-# Colores de máscara por índice de clase (BGR)
-# Índice 0 = Fachada → azul semitransparente
-# Índice 1 = Poste   → rojo semitransparente
+# Colores de mascara por indice de clase (BGR)
+# Indice 0 = Fachada → azul semitransparente
+# Indice 1 = Poste   → rojo semitransparente
 COLOR_MASCARA: dict[int, tuple[int, int, int]] = {
     0: (200, 80,  0),   # Fachada – azul
     1: (0,   80, 200),  # Poste   – rojo
 }
-ALPHA_MASCARA = 0.45  # Opacidad del overlay de máscara
+ALPHA_MASCARA = 0.45  # Opacidad del overlay de mascara
 
 
 # =====================================================
@@ -46,6 +52,7 @@ def dibujar_detecciones(
     cajas: list[list[float]],
     scores: list[float],
     clases: list[str],
+    ids_clase: list[int],
     umbral_confianza: float = 0.25,
 ) -> np.ndarray:
     """
@@ -54,10 +61,10 @@ def dibujar_detecciones(
     Parámetros
     ----------
     imagen             : Imagen en formato NumPy BGR (como la entrega OpenCV).
-    cajas              : Lista de cajas en formato [x1, y1, x2, y2] (píxeles absolutos).
+    cajas              : Lista de cajas en formato [x1, y1, x2, y2].
     scores             : Lista de confianzas (0.0 – 1.0) para cada caja.
     clases             : Lista de nombres de clase para cada caja.
-    umbral_confianza   : Mínima confianza para mostrar una detección.
+    umbral_confianza   : Minima confianza para mostrar una deteccion.
 
     Retorna
     -------
@@ -72,30 +79,31 @@ def dibujar_detecciones(
             continue
 
         x1, y1, x2, y2 = map(int, caja)
-
-        # ── Dibujar rectángulo de la caja ──────────────────────────
+        colorCaja = COLOR_CAJA.get(ids_clase[cajas.index(caja)], (128, 128, 128))  # Gris por defecto
+        # Dibujar rectangulo de la caja 
         cv2.rectangle(
             imagen_anotada,
             (x1, y1),
             (x2, y2),
-            COLOR_CAJA,
+            colorCaja,
             GROSOR_CAJA,
         )
 
-        # ── Preparar texto de etiqueta ─────────────────────────────
+        # Preparar texto de etiqueta 
         etiqueta = f"{clase}: {score:.2f}"
         (ancho_txt, alto_txt), baseline = cv2.getTextSize(
             etiqueta, FUENTE_CV2, ESCALA_FUENTE, GROSOR_FUENTE
         )
 
-        # Fondo sólido para la etiqueta (mejora la legibilidad)
+        # Fondo solido para la etiqueta 
         y_fondo = max(y1 - alto_txt - baseline - 4, 0)
+        colorFondo = COLOR_FONDO_TEXTO.get(ids_clase[cajas.index(caja)], (128, 128, 128))  # Mismo color que la caja
         cv2.rectangle(
             imagen_anotada,
             (x1, y_fondo),
             (x1 + ancho_txt + 4, y1),
-            COLOR_FONDO_TEXTO,
-            thickness=-1,  # Relleno sólido
+            colorFondo,
+            thickness=-1,  # Relleno solido
         )
 
         # Texto de la etiqueta
@@ -115,13 +123,13 @@ def dibujar_detecciones(
 
 def dibujar_conteo_umbral(imagen: np.ndarray,cantidad: int,umbral: float) -> np.ndarray:
     """
-    Añade un contador de casas detectadas y el umbral de confianza
+    Añade un contadora los objetos detectadas y el umbral de confianza
     en la esquina inferior izquierda.
 
-    Parámetros
+    Parametros
     ----------
     imagen   : Imagen NumPy BGR.
-    cantidad : Número de casas detectadas.
+    cantidad : Número de Objetos detectadas.
     umbral   : Umbral de confianza utilizado en la inferencia.
 
     Retorna
@@ -132,9 +140,9 @@ def dibujar_conteo_umbral(imagen: np.ndarray,cantidad: int,umbral: float) -> np.
 
     alto_img, ancho_img = imagen_anotada.shape[:2]
 
-    texto = f"Casas: {cantidad} | Umbral: {umbral:.2f}"
+    texto = f"Objetos Detectatos: {cantidad} | Umbral: {umbral:.2f}"
 
-    # Obtener tamaño del texto dinámicamente
+    # Obtener tamaño del texto dinamicamente
     (ancho_txt, alto_txt), baseline = cv2.getTextSize(
         texto,
         FUENTE_CV2,
@@ -180,26 +188,26 @@ def generar_mascara_postes(
     dilation_px: int = 20,
 ) -> np.ndarray:
     """
-    Combina todas las máscaras de postes en una única imagen binaria
-    y aplica dilatación para mejorar el resultado del inpainting.
+    Combina todas las mascaras de postes en una unica imagen binaria
+    y aplica dilatacion para mejorar el resultado del inpainting.
 
-    LaMa reconstruye mejor cuando la máscara cubre ligeramente más
-    allá del borde del objeto — la dilatación logra ese efecto.
+    LaMa reconstruye mejor cuando la mascara cubre ligeramente mas
+    allá del borde del objeto — la dilatacion logra ese efecto.
 
     El resultado es una imagen en escala de grises donde:
       - 255 (blanco) = región a eliminar (poste + margen dilatado)
       - 0   (negro)  = fondo a conservar
 
-    Parámetros
+    Parametros
     ----------
-    mascaras    : Lista de arrays binarios (H, W) uint8 — uno por detección.
-    ids_clase   : Lista de índices de clase para cada máscara.
+    mascaras    : Lista de arrays binarios (H, W) uint8 — uno por deteccion.
+    ids_clase   : Lista de indices de clase para cada mascara.
     shape       : Tupla (alto, ancho) de la imagen original.
-    dilation_px : Radio de dilatación en píxeles (por defecto 20).
+    dilation_px : Radio de dilatacion en pixeles (por defecto 20).
 
     Retorna
     -------
-    Array (H, W) uint8 con 255 en la región de postes dilatada y 0 en el resto.
+    Array (H, W) uint8 con 255 en la region de postes dilatada y 0 en el resto.
     """
     alto, ancho = shape
     mascara_combinada = np.zeros((alto, ancho), dtype=np.uint8)
@@ -224,23 +232,23 @@ def armar_collage(
     alto_etiqueta: int = 30,
 ) -> np.ndarray:
     """
-    Arma un collage horizontal con las tres imágenes del pipeline:
-    detección | máscara | resultado sin postes.
+    Arma un collage horizontal con las tres imagenes del pipeline:
+    deteccion | mascara | resultado sin postes.
 
-    Parámetros
+    Parametros
     ----------
-    imagen_deteccion : Imagen BGR con máscaras y bounding boxes dibujados.
-    mascara          : Máscara binaria (H, W) uint8 de los postes.
+    imagen_deteccion : Imagen BGR con mascaras y bounding boxes dibujados.
+    mascara          : Mascara binaria (H, W) uint8 de los postes.
     imagen_resultado : Imagen BGR con los postes eliminados por inpainting.
-    alto_etiqueta    : Altura en píxeles de la barra de título de cada panel.
+    alto_etiqueta    : Altura en pixeles de la barra de titulo de cada panel.
 
     Retorna
     -------
     Imagen BGR con los tres paneles lado a lado y etiquetas en la parte superior.
     """
-    etiquetas = ["Detección", "Máscara postes", "Sin postes (LaMa)"]
+    etiquetas = ["Deteccion", "Mascara postes", "Sin postes (LaMa)"]
 
-    # Convertir máscara gris a BGR para poder concatenar con las otras
+    # Convertir mascara gris a BGR para poder concatenar con las otras
     mascara_bgr = cv2.cvtColor(mascara, cv2.COLOR_GRAY2BGR)
 
     paneles = [imagen_deteccion, mascara_bgr, imagen_resultado]
@@ -248,10 +256,10 @@ def armar_collage(
 
     lienzos = []
     for panel, etiqueta in zip(paneles, etiquetas):
-        # Redimensionar al mismo alto/ancho por si difieren
+        # Redimensionar al mismo alto/ancho
         panel_r = cv2.resize(panel, (ancho_img, alto_img))
 
-        # Barra de título negra con texto blanco
+        # Barra de titulo
         barra = np.zeros((alto_etiqueta, ancho_img, 3), dtype=np.uint8)
         cv2.putText(
             barra, etiqueta,
@@ -270,22 +278,22 @@ def dibujar_mascaras(
     alpha: float = ALPHA_MASCARA,
 ) -> np.ndarray:
     """
-    Superpone máscaras de segmentación sobre una imagen NumPy BGR.
+    Superpone mascaras de segmentacion sobre una imagen NumPy BGR.
 
-    Cada máscara se colorea según el índice de clase (ver COLOR_MASCARA).
+    Cada mascara se colorea segun el indice de clase.
     Se aplica como overlay semitransparente para no ocultar la imagen original.
 
-    Parámetros
+    Parametros
     ----------
     imagen     : Imagen NumPy BGR de fondo.
-    mascaras   : Lista de arrays binarios (H, W) uint8, uno por detección.
+    mascaras   : Lista de arrays binarios (H, W) uint8, uno por deteccion.
                  Deben estar ya redimensionados al tamaño de la imagen.
-    ids_clase  : Lista de índices de clase correspondientes a cada máscara.
+    ids_clase  : Lista de indices de clase correspondientes a cada mascara.
     alpha      : Opacidad del overlay (0.0 = invisible, 1.0 = sólido).
 
     Retorna
     -------
-    Imagen anotada con máscaras superpuestas (copia, no modifica la original).
+    Imagen anotada con mascaras superpuestas (copia, no modifica la original).
     """
     if not mascaras:
         return imagen.copy()
@@ -302,7 +310,7 @@ def dibujar_mascaras(
 
 
 # =====================================================
-# SECCIÓN 2: CONVERSIÓN DE FORMATOS
+# SECCION 2: CONVERSION DE FORMATOS
 # =====================================================
 
 def numpy_a_bytes(imagen_bgr: np.ndarray, extension: str = ".jpg") -> bytes:
@@ -353,11 +361,11 @@ def bytes_a_numpy(datos: bytes) -> np.ndarray:
 
 def parsear_resultados_yolo(resultado) -> dict:
     """
-    Extrae cajas, scores, clases y máscaras del objeto Results de Ultralytics.
+    Extrae cajas, scores, clases y mascaras del objeto Results de Ultralytics.
 
-    Compatible con modelos de detección (solo cajas) y segmentación (cajas +
-    máscaras). Si el modelo no produce máscaras, la clave 'mascaras' será una
-    lista vacía.
+    Compatible con modelos de deteccion (solo cajas) y segmentacion (cajas +
+    mascaras). Si el modelo no produce mascaras, la clave 'mascaras' será una
+    lista vacia.
 
     Parámetros
     ----------
@@ -367,12 +375,12 @@ def parsear_resultados_yolo(resultado) -> dict:
     -------
     Diccionario con:
       - cajas_xyxy : list[list[float]] – coordenadas [x1, y1, x2, y2]
-      - scores     : list[float]       – confianza de cada detección
-      - clases     : list[str]         – nombre de clase de cada detección
-      - ids_clase  : list[int]         – índice de clase de cada detección
+      - scores     : list[float]       – confianza de cada deteccion
+      - clases     : list[str]         – nombre de clase de cada deteccion
+      - ids_clase  : list[int]         – índice de clase de cada deteccion
       - mascaras   : list[np.ndarray]  – máscaras binarias (H, W) uint8,
                                          redimensionadas al tamaño original.
-                                         Lista vacía si el modelo no es seg.
+                                         Lista vacia si el modelo no es seg.
       - total      : int               – número total de detecciones
     """
     cajas_xyxy  = []
@@ -380,24 +388,24 @@ def parsear_resultados_yolo(resultado) -> dict:
     clases      = []
     ids_clase   = []
 
-    # Iterar sobre cada detección encontrada
+    # Iterar sobre cada deteccion encontrada
     for caja in resultado.boxes:
 
         # Coordenadas absolutas [x1, y1, x2, y2]
         coords = caja.xyxy[0].tolist()
         cajas_xyxy.append(coords)
 
-        # Confianza de la detección
+        # Confianza de la deteccion
         scores.append(float(caja.conf[0]))
 
-        # Nombre e índice de la clase detectada
+        # Nombre e indice de la clase detectada
         idx_clase = int(caja.cls[0])
         ids_clase.append(idx_clase)
 
         nombre_clase = resultado.names.get(idx_clase, f"clase_{idx_clase}")
         clases.append(nombre_clase)
 
-    # ── Máscaras de segmentación (solo disponibles con modelos *-seg) ──────
+    # Mascaras de segmentacion
     mascaras = []
     if resultado.masks is not None:
         orig_h, orig_w = resultado.orig_shape

@@ -1,14 +1,11 @@
 """
-INFERENCIA – Taller YOLO Detección de Casas
-============================================
-API FastAPI + script standalone para ejecutar detección de casas
-usando el modelo entrenado 'models/postes-yolo.pt'.
+INFERENCIA – Taller YOLO Detección de Fachadas y Postes
+=========================================================
+API FastAPI para detección de fachadas y postes y eliminación de postes
+usando YOLOv8-seg + LaMa (inpainting).
 
-Uso como API:
+Uso:
     uvicorn src.inferencia:app --reload --port 8000
-
-Uso como script (CLI):
-    python src/inferencia.py --imagen ruta/imagen.jpg
 """
 import io
 import numpy as np
@@ -52,17 +49,17 @@ FORMATOS_PERMITIDOS = {"image/jpeg", "image/png", "image/bmp", "image/webp"}
 # =====================================================
 
 app = FastAPI(
-    title="API – Detector de Casas con YOLO",
+    title="API – Detección de Fachadas y Postes con YOLO + LaMa",
     description=(
-        "Detecta casas en imágenes usando un modelo YOLOv8 entrenado "
-        "con imágenes colombianas urbanas y rurales."
+        "Detecta fachadas y postes en imágenes urbanas con YOLOv8-seg "
+        "y elimina los postes usando inpainting con LaMa."
     ),
-    version="1.2.0",
+    version="2.0.0",
 )
 
 
 # =====================================================
-# CARGA DE MODELOS (singleton para no recargar en cada request)
+# CARGA DE MODELOS 
 # =====================================================
 
 _modelo_cache: YOLO | None = None
@@ -70,21 +67,21 @@ _lama_cache: SimpleLama | None = None
 
 
 def cargar_lama() -> SimpleLama:
-    """Carga el modelo LaMa una sola vez y lo reutiliza en cada petición."""
+    """Carga el modelo LaMa una sola vez y lo reutiliza en cada peticion."""
     global _lama_cache
     if _lama_cache is None:
         print("[INFO] Cargando modelo LaMa...")
         _lama_cache = SimpleLama()
-        print("[INFO] LaMa cargado exitosamente ✅")
+        print("[INFO] LaMa cargado exitosamente")
     return _lama_cache
 
 
 def cargar_modelo(ruta_pesos: str | Path = RUTA_MODELO_DEFAULT) -> YOLO:
     """
-    Carga el modelo YOLO desde disco usando caché en memoria.
+    Carga el modelo YOLO desde disco usando memoria cache.
     Solo se carga una vez durante el ciclo de vida de la API.
 
-    Parámetros
+    Parametros
     ----------
     ruta_pesos : Ruta al archivo .pt de pesos entrenados.
 
@@ -104,46 +101,29 @@ def cargar_modelo(ruta_pesos: str | Path = RUTA_MODELO_DEFAULT) -> YOLO:
     if not ruta_pesos.exists():
         raise FileNotFoundError(
             f"No se encontró el archivo de pesos en: {ruta_pesos}\n"
-            f"Asegúrate de haber entrenado el modelo (ver src/train_yolo.py) "
+            f"Asegurate de haber entrenado el modelo (ver src/train_yolo.py) "
             f"y que los pesos estén en 'models/postes-yolo.pt'."
         )
 
-    # Usar caché para no recargar el modelo en cada petición
+    # Usar cache para no recargar el modelo en cada peticion
     if _modelo_cache is None:
         print(f"[INFO] Cargando modelo desde: {ruta_pesos}")
         _modelo_cache = YOLO(str(ruta_pesos))
-        print("[INFO] Modelo cargado exitosamente ✅")
+        print("[INFO] Modelo cargado exitosamente")
 
     return _modelo_cache
 
 
-def ejecutar_inferencia(imagen_bgr) -> tuple[dict, object]:
-    """
-    Ejecuta la inferencia YOLO sobre una imagen NumPy BGR.
-
-    Parámetros
-    ----------
-    imagen_bgr : Imagen en formato NumPy BGR.
-
-    Retorna
-    -------
-    Tupla (resultados_parseados, objeto_resultado_ultralytics).
-    """
+def ejecutar_inferencia(imagen_bgr: np.ndarray) -> dict:
+    """Ejecuta YOLO sobre una imagen NumPy BGR y retorna los resultados parseados."""
     modelo = cargar_modelo()
-
-    # Ejecutar predicción
     resultados = modelo.predict(
         source=imagen_bgr,
         conf=UMBRAL_CONFIANZA,
         imgsz=TAMANO_IMAGEN,
         verbose=False,
     )
-
-    # Tomamos el primer (y único) frame de resultados
-    resultado_frame = resultados[0]
-    datos = parsear_resultados_yolo(resultado_frame)
-
-    return datos, resultado_frame
+    return parsear_resultados_yolo(resultados[0])
 
 
 # =====================================================
@@ -154,9 +134,9 @@ def validar_archivo_imagen(archivo: UploadFile) -> bytes:
     """
     Valida que el archivo subido sea una imagen permitida y devuelve sus bytes.
 
-    Parámetros
+    Parametros
     ----------
-    archivo : Archivo subido vía FastAPI UploadFile.
+    archivo : Archivo subido via FastAPI UploadFile.
 
     Retorna
     -------
@@ -164,14 +144,14 @@ def validar_archivo_imagen(archivo: UploadFile) -> bytes:
 
     Lanza
     -----
-    HTTPException 400 si el formato no es válido.
+    HTTPException 400 si el formato no es valido.
     """
     if archivo.content_type not in FORMATOS_PERMITIDOS:
         raise HTTPException(
             status_code=400,
             detail=(
                 f"Formato no soportado: '{archivo.content_type}'. "
-                f"Formatos válidos: {sorted(FORMATOS_PERMITIDOS)}"
+                f"Formatos validos: {sorted(FORMATOS_PERMITIDOS)}"
             ),
         )
     return archivo.file.read()
@@ -181,35 +161,35 @@ def validar_archivo_imagen(archivo: UploadFile) -> bytes:
 # ENDPOINT DE LA API
 # =====================================================
 
-@app.get("/", summary="Información de la API")
+@app.get("/", summary="Informacion de la API")
 def raiz():
-    """Devuelve información general y lista de endpoints disponibles."""
+    """Devuelve informacion general y lista de endpoints disponibles."""
     return {
-        "api": "Detector de Casas – YOLO",
-        "version": "1.2.0",
+        "api": "Detección de Fachadas y Postes usando YOLO y LaMa",
+        "version": "2.0.0",
         "modelo": str(RUTA_MODELO_DEFAULT),
         "endpoints": {
-            "POST /detectar_casas": "Detectar casas y devolver imagen con las detecciones dibujadas.",
+            "POST /detectar_fachadas_postes": "Permite detectar fachadas y postes y devuelve una imagen con máscaras y bounding boxes.",
+            "POST /borrar_postes": "Detecta fachadas y postes, eliminando estos ultimos con generación de máscaras y uso de Lama inpainting.",
         },
     }
 
 
-@app.post("/detectar_casas", summary="Detectar casas")
-async def detectar_casas(
+@app.post("/detectar_fachadas_postes", summary="Detectar fachadas y postes")
+async def detectar_fachadas_postes(
     archivo: UploadFile = File(description="Imagen JPG/PNG/BMP/WebP"),
 ):
     """
-    Recibe una imagen y devuelve la imagen con las detecciones dibujadas.
+    Recibe una imagen y la devuelve con las detecciones dibujadas.
 
     La respuesta es una imagen JPEG que incluye:
-    - Bounding boxes en formato [x1, y1, x2, y2] dibujadas sobre la imagen.
-    - Etiquetas con nombre de clase y score de confianza.
-    - Contador total de casas detectadas.
-    - Umbral de confianza utilizado.
+    - Máscaras de segmentación coloreadas por clase (fachada / poste).
+    - Bounding boxes con etiqueta de clase y confianza.
+    - Contador total de detecciones.
 
-    Información adicional se envía en los headers HTTP:
+    Headers de respuesta:
     - X-Umbral-Confianza
-    - X-Casas-Detectadas
+    - X-Detecciones-Total
     """
     # Validar y leer el archivo subido
     contenido = validar_archivo_imagen(archivo)
@@ -222,27 +202,27 @@ async def detectar_casas(
 
     # Ejecutar inferencia
     try:
-        datos, _ = ejecutar_inferencia(imagen_bgr)
+        datos = ejecutar_inferencia(imagen_bgr)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    # Dibujar máscaras de segmentación (si el modelo las produce)
+    # Dibujar mascaras de segmentacion
     imagen_anotada = dibujar_mascaras(
         imagen_bgr,
         datos["mascaras"],
         datos["ids_clase"],
     )
 
-    # Dibujar bounding boxes y etiquetas sobre la imagen con máscaras
+    # Dibujar bounding boxes y etiquetas sobre la imagen con mascaras
     imagen_anotada = dibujar_detecciones(
         imagen_anotada,
         datos["cajas_xyxy"],
         datos["scores"],
         datos["clases"],
+        datos["ids_clase"],
         umbral_confianza=UMBRAL_CONFIANZA,
     )
 
-    # Añadir contador de casas
     imagen_anotada = dibujar_conteo_umbral(imagen_anotada, datos["total"], UMBRAL_CONFIANZA)
 
     # Convertir imagen anotada a bytes JPEG para la respuesta
@@ -253,126 +233,20 @@ async def detectar_casas(
         media_type="image/jpeg",
         headers={
             "X-Umbral-Confianza": str(UMBRAL_CONFIANZA),
-            "X-Casas-Detectadas": str(datos["total"]),
+            "X-Detecciones-Total": str(datos["total"]),
             "Content-Disposition": f'inline; filename="deteccion_{archivo.filename}"',
         },
     )
 
 
-@app.post("/mascara_postes", summary="Obtener máscara binaria de postes")
-async def mascara_postes(
-    archivo: UploadFile = File(description="Imagen JPG/PNG/BMP/WebP"),
-):
-    """
-    Devuelve la máscara binaria de los postes detectados en la imagen.
-
-    La respuesta es una imagen PNG en escala de grises donde:
-    - Blanco (255) = región de poste a eliminar.
-    - Negro  (0)   = fondo a conservar.
-
-    Esta máscara puede usarse directamente como entrada para LaMa u otro
-    modelo de inpainting.
-    """
-    contenido = validar_archivo_imagen(archivo)
-
-    try:
-        imagen_bgr = bytes_a_numpy(contenido)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    try:
-        datos, _ = ejecutar_inferencia(imagen_bgr)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-
-    alto, ancho = imagen_bgr.shape[:2]
-    mascara = generar_mascara_postes(datos["mascaras"], datos["ids_clase"], (alto, ancho))
-
-    mascara_bytes = numpy_a_bytes(mascara, extension=".png")
-
-    return StreamingResponse(
-        io.BytesIO(mascara_bytes),
-        media_type="image/png",
-        headers={
-            "X-Postes-Detectados": str(sum(1 for c in datos["ids_clase"] if c == 1)),
-            "Content-Disposition": f'inline; filename="mascara_{archivo.filename}"',
-        },
-    )
-
-
-@app.post("/eliminar_postes", summary="Eliminar postes con inpainting (LaMa)")
-async def eliminar_postes(
-    archivo: UploadFile = File(description="Imagen JPG/PNG/BMP/WebP"),
-):
-    """
-    Pipeline completo: detecta postes, genera su máscara y aplica LaMa
-    para reconstruir la imagen sin los postes.
-
-    Pasos internos:
-    1. YOLO detecta postes y genera máscaras de segmentación.
-    2. Las máscaras de postes se combinan en una imagen binaria.
-    3. LaMa reconstruye la región enmascarada con contenido coherente.
-
-    La respuesta es la imagen original sin los postes, en formato JPEG.
-    """
-    contenido = validar_archivo_imagen(archivo)
-
-    try:
-        imagen_bgr = bytes_a_numpy(contenido)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    try:
-        datos, _ = ejecutar_inferencia(imagen_bgr)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-
-    alto, ancho = imagen_bgr.shape[:2]
-    mascara = generar_mascara_postes(datos["mascaras"], datos["ids_clase"], (alto, ancho))
-
-    if mascara.max() == 0:
-        # No hay postes detectados — devolver imagen original sin cambios
-        imagen_bytes = numpy_a_bytes(imagen_bgr, extension=".jpg")
-        return StreamingResponse(
-            io.BytesIO(imagen_bytes),
-            media_type="image/jpeg",
-            headers={
-                "X-Postes-Eliminados": "0",
-                "Content-Disposition": f'inline; filename="sin_postes_{archivo.filename}"',
-            },
-        )
-
-    # Convertir imagen BGR (OpenCV) a RGB (PIL) para LaMa
-    imagen_rgb = PILImage.fromarray(imagen_bgr[:, :, ::-1])
-    mascara_pil = PILImage.fromarray(mascara)
-
-    lama = cargar_lama()
-    imagen_resultado = lama(imagen_rgb, mascara_pil)  # Retorna PIL RGB
-
-    # Convertir resultado PIL RGB → NumPy BGR → bytes
-    resultado_bgr = np.array(imagen_resultado)[:, :, ::-1]
-    imagen_bytes = numpy_a_bytes(resultado_bgr, extension=".jpg")
-
-    n_postes = sum(1 for c in datos["ids_clase"] if c == 1)
-
-    return StreamingResponse(
-        io.BytesIO(imagen_bytes),
-        media_type="image/jpeg",
-        headers={
-            "X-Postes-Eliminados": str(n_postes),
-            "Content-Disposition": f'inline; filename="sin_postes_{archivo.filename}"',
-        },
-    )
-
-
-@app.post("/pipeline_completo", summary="Collage: detección + máscara + resultado")
-async def pipeline_completo(
+@app.post("/borrar_postes", summary="Detecta fachadas y postes, eliminando estos ultimos con generación de máscaras y uso de Lama inpainting.")
+async def borrar_postes(
     archivo: UploadFile = File(description="Imagen JPG/PNG/BMP/WebP"),
 ):
     """
     Ejecuta el pipeline completo y devuelve un collage JPEG con tres paneles:
 
-    | Detección (máscaras + bboxes) | Máscara postes | Sin postes (LaMa) |
+    | Deteccion (mascaras + bboxes) | Mascara postes | Sin postes (LaMa) |
 
     Útil para verificar visualmente cada etapa del proceso en una sola imagen.
     """
@@ -384,21 +258,21 @@ async def pipeline_completo(
         raise HTTPException(status_code=400, detail=str(e))
 
     try:
-        datos, _ = ejecutar_inferencia(imagen_bgr)
+        datos = ejecutar_inferencia(imagen_bgr)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
     alto, ancho = imagen_bgr.shape[:2]
 
-    # Panel 1 — detección con máscaras y bounding boxes
+    # Panel 1 — deteccion con mascaras y bounding boxes
     imagen_deteccion = dibujar_mascaras(imagen_bgr, datos["mascaras"], datos["ids_clase"])
     imagen_deteccion = dibujar_detecciones(
-        imagen_deteccion, datos["cajas_xyxy"], datos["scores"], datos["clases"],
+        imagen_deteccion, datos["cajas_xyxy"], datos["scores"], datos["clases"], datos["ids_clase"],
         umbral_confianza=UMBRAL_CONFIANZA,
     )
     imagen_deteccion = dibujar_conteo_umbral(imagen_deteccion, datos["total"], UMBRAL_CONFIANZA)
 
-    # Panel 2 — máscara binaria de postes (con dilatación)
+    # Panel 2 — mascara binaria de postes (con dilatacion)
     mascara = generar_mascara_postes(datos["mascaras"], datos["ids_clase"], (alto, ancho))
 
     # Panel 3 — inpainting con LaMa
