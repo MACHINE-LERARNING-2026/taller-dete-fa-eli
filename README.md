@@ -44,6 +44,7 @@ Nota: Los comandos en este README se muestran con python / pip. Si en tu entorno
 
 2. Estructura del Proyecto
 
+```
 taller-yolo-fachadas/
 
 ├── data.yaml               # Descriptor del dataset (rutas train/val/test, nc, names)
@@ -71,7 +72,7 @@ taller-yolo-fachadas/
 ├── requirements.txt        # Dependencias y librerías necesarias para la aplicación
 
 └── README.md               # Descripción del repositorio
-
+```
 
 Descripción del dataset y origen de imágenes
 
@@ -99,11 +100,16 @@ Nota: Para GPU, sigue las instrucciones de la web oficial para instalar la build
 4. Descarga del repositorio
 
 4.1 Clonar/Descargar el repositorio
-´´´bashgit clone https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git
+```
+bashgit clone https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git
 cd taller-dete-fa-eli
+```
+
 4.2 Descargar como .zip
 Desde la interfaz web del repositorio https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git descarga el ZIP, descomprímelo y entra en la carpeta:
+```
 bashcd taller-dete-fa-eli
+```
 
 5. Ejecución
 
@@ -111,39 +117,39 @@ bashcd taller-dete-fa-eli
 
 Para windows se utiliza el siguiente comando desde un CMD y ubicarse sobre la ruta del repositorio (taller-dete-fa-eli):
 bash# Windows
-
+```
   python -m venv venv
   venv\Scripts\activate
   pip install -r requirements.txt
-  
+```
 Para macOS o Linux se utiliza el siguiente comando desde la terminal y ubicarse sobre la ruta del repositorio (taller-dete-fa-eli.git):
-
+```
   bash# macOS / Linux
   python -m venv venv
   source venv/bin/activate
   pip install -r requirements.txt
-  
+```
 Si usas macOS y encuentras problemas SSL con algunas librerías, instala los certificados del sistema Python si aplica:
-
+```
   bash/Applications/Python\ 3.x/Install\ Certificates.command
-  
+```
 Nota: Si uvicorn o la instalación fallan, revisa que el venv esté activado.
 
 5.2. Entrenamiento (opcional)
 
 El repositorio ya cuenta con los pesos entrenados ubicados en: /models/postes-yolo.pt, por lo cual no es necesario realizar nuevamente un entrenamiento para usar la API. Este proceso es totalmente opcional.
-
+```
   bash# Ejecuta el script de entrenamiento
   python src/train_yolo.py
-
+```
 El script guarda los resultados en models/detect/weights/best.pt y copia best.pt a models/postes-yolo.pt
 
 5.3. Iniciar servicios de FastAPI
 
 Desde un CMD de Windows y ubicados sobre la raíz del repositorio, ejecuta el siguiente comando:
-
+```
   bashuvicorn src.inferencia:app --reload
-
+```
 Posterior a la confirmación de la ejecución, abre la URL http://127.0.0.1:8000/docs desde tu navegador de preferencia. Esta URL expone los siguientes métodos de la API:
 
 GET /                         Información de la API
@@ -168,12 +174,13 @@ Despliega el método POST /borrar_postes y da click en Try it out, selecciona el
 6. Resultados (métricas) y ejemplos de detección
 
 Para validar y obtener métricas con Ultralytics:
-
+```
   pythonfrom ultralytics import YOLO
   model = YOLO('models/postes-yolo.pt')
   metrics = model.val(data='data.yaml')
   print(metrics)
-  
+```
+
 Con el dataset de 426 imágenes divididas en 352 para entrenamiento, 37 de validación y 37 de test. Se obtuvieron las siguientes métricas después del entrenamiento:
 
 <img width="4000" height="1200" alt="results" src="https://github.com/user-attachments/assets/bff4970c-c10b-458b-baf9-3427be78fa28" />
@@ -191,9 +198,13 @@ Esto evidencia una mejora gradual en la capacidad del modelo para detectar los o
 En general, el modelo muestra un comportamiento de aprendizaje estable y sin señales claras de sobreajuste, ya que las pérdidas de validación también disminuyen durante el entrenamiento. No obstante, los resultados sugieren que el desempeño podría mejorarse mediante el uso de más datos de entrenamiento, optimización de anotaciones o ajuste de hiperparámetros en el modelo basado en YOLOv8.
 A continuación, se observa la matriz de confusión obtenida:
 
-<img width="3000" height="2250" alt="confusion_matrix" src="https://github.com/user-attachments/assets/5a2ec5d8-4843-4993-a6d6-b582ca1072a8" />
+<img width="3000" height="2250" alt="confusion_matrix" src="https://github.com/user-attachments/assets/b2e6ea06-cfcb-452c-988e-05bfbb9afbfe" />
 
 En esta matriz se puede apreciar que el modelo logra identificar correctamente un número considerable de instancias de fachadas y postes. Sin embargo, también se observan falsos positivos, donde el modelo predice la presencia de una clase cuando en realidad corresponde al fondo de la imagen, lo que indica cierta confusión entre estructuras del entorno y las clases de interés. Asimismo, se registran falsos negativos, es decir, casos en los que el modelo no logra detectar un objeto presente y lo clasifica como background. En conjunto, estos resultados sugieren que, aunque el modelo presenta un desempeño razonable, todavía existe margen de mejora en la discriminación entre las clases objetivo y el fondo.
+
+![WhatsApp Image 2026-03-21 at 14 54 55](https://github.com/user-attachments/assets/83f5cf7d-08cb-4085-ac8c-bde578a75c6a)
+
+![WhatsApp Image 2026-03-21 at 14 57 18](https://github.com/user-attachments/assets/55245cfc-397c-4b2e-8492-01eb1439099e)
 
 7. Limitaciones y pasos futuros recomendados
 
