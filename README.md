@@ -55,7 +55,7 @@ taller-yolo-fachadas/
 ├── models/
 │   └── detect/             # Carpeta que genera Ultralytics durante el training y contiene los resultados de entrenamiento
 │   └── weights/            # Contiene los pesos preentrenados de yolov8m
-│   └── fachadas-yolo.pt    # Resultado de pesos del entrenamiento que serán usados por la API
+│   └── postes-yolo.pt    # Resultado de pesos del entrenamiento que serán usados por la API
 ├── train/                  # Imágenes y etiquetas de entrenamiento generadas por Roboflow
 ├── valid/                  # Imágenes y etiquetas de validación generadas por Roboflow
 ├── requirements.txt        # Dependencias y librerías necesarias para la aplicación
