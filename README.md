@@ -81,7 +81,7 @@ GPU opcional (para entrenar más rápido y acelerar la inferencia de LaMa)
 
 Para validar la versión de Python usa el siguiente comando:
 ```
-bashpython --version
+python --version
 ```
 Nota: Para GPU, sigue las instrucciones de la web oficial para instalar la build de torch compatible con tu versión de CUDA.
 
@@ -89,14 +89,14 @@ Nota: Para GPU, sigue las instrucciones de la web oficial para instalar la build
 
 4.1 Clonar/Descargar el repositorio
 ```
-bashgit clone https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git
+git clone https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git
 cd taller-dete-fa-eli
 ```
 
 4.2 Descargar como .zip
 Desde la interfaz web del repositorio https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git descarga el ZIP, descomprímelo y entra en la carpeta:
 ```
-bashcd taller-dete-fa-eli
+cd taller-dete-fa-eli
 ```
 
 5. Ejecución
@@ -112,14 +112,14 @@ bash# Windows
 ```
 Para macOS o Linux se utiliza el siguiente comando desde la terminal y ubicarse sobre la ruta del repositorio (taller-dete-fa-eli.git):
 ```
-  bash# macOS / Linux
+  # macOS / Linux
   python -m venv venv
   source venv/bin/activate
   pip install -r requirements.txt
 ```
 Si usas macOS y encuentras problemas SSL con algunas librerías, instala los certificados del sistema Python si aplica:
 ```
-  bash/Applications/Python\ 3.x/Install\ Certificates.command
+  /Applications/Python\ 3.x/Install\ Certificates.command
 ```
 Nota: Si uvicorn o la instalación fallan, revisa que el venv esté activado.
 
@@ -127,7 +127,7 @@ Nota: Si uvicorn o la instalación fallan, revisa que el venv esté activado.
 
 El repositorio ya cuenta con los pesos entrenados ubicados en: /models/postes-yolo.pt, por lo cual no es necesario realizar nuevamente un entrenamiento para usar la API. Este proceso es totalmente opcional.
 ```
-  bash# Ejecuta el script de entrenamiento
+  # Ejecuta el script de entrenamiento
   python src/train_yolo.py
 ```
 El script guarda los resultados en models/detect/weights/best.pt y copia best.pt a models/postes-yolo.pt
@@ -136,7 +136,7 @@ El script guarda los resultados en models/detect/weights/best.pt y copia best.pt
 
 Desde un CMD de Windows y ubicados sobre la raíz del repositorio, ejecuta el siguiente comando:
 ```
-  bashuvicorn src.inferencia:app --reload
+  uvicorn src.inferencia:app --reload
 ```
 Posterior a la confirmación de la ejecución, abre la URL http://127.0.0.1:8000/docs desde tu navegador de preferencia. Esta URL expone los siguientes métodos de la API:
 
@@ -167,7 +167,7 @@ Despliega el método POST /borrar_postes y da click en Try it out, selecciona el
 
 Para validar y obtener métricas con Ultralytics:
 ```
-  pythonfrom ultralytics import YOLO
+  from ultralytics import YOLO
   model = YOLO('models/postes-yolo.pt')
   metrics = model.val(data='data.yaml')
   print(metrics)
