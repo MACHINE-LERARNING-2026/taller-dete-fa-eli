@@ -84,35 +84,51 @@ cd taller-dete-fa-eli
 Desde la interfaz web del repositorio https://github.com/MACHINE-LERARNING-2026/taller-dete-fa-eli.git descarga el ZIP, descomprímelo y entra en la carpeta:
 bashcd taller-dete-fa-eli
 
-
 5. Ejecución
 
 5.1. Crear y activar un entorno virtual
+
 Para windows se utiliza el siguiente comando desde un CMD y ubicarse sobre la ruta del repositorio (taller-dete-fa-eli):
 bash# Windows
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+
+  python -m venv venv
+  venv\Scripts\activate
+  pip install -r requirements.txt
+  
 Para macOS o Linux se utiliza el siguiente comando desde la terminal y ubicarse sobre la ruta del repositorio (taller-dete-fa-eli.git):
-bash# macOS / Linux
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+
+  bash# macOS / Linux
+  python -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+  
 Si usas macOS y encuentras problemas SSL con algunas librerías, instala los certificados del sistema Python si aplica:
-bash/Applications/Python\ 3.x/Install\ Certificates.command
+
+  bash/Applications/Python\ 3.x/Install\ Certificates.command
+  
 Nota: Si uvicorn o la instalación fallan, revisa que el venv esté activado.
+
 5.2. Entrenamiento (opcional)
+
 El repositorio ya cuenta con los pesos entrenados ubicados en: /models/postes-yolo.pt, por lo cual no es necesario realizar nuevamente un entrenamiento para usar la API. Este proceso es totalmente opcional.
-bash# Ejecuta el script de entrenamiento
-python src/train_yolo.py
-El script guarda los resultados en models/detect/weights/best.pt y copia best.pt a models/postes-yolo.pt.
+
+  bash# Ejecuta el script de entrenamiento
+  python src/train_yolo.py
+
+El script guarda los resultados en models/detect/weights/best.pt y copia best.pt a models/postes-yolo.pt
+
 5.3. Iniciar servicios de FastAPI
+
 Desde un CMD de Windows y ubicados sobre la raíz del repositorio, ejecuta el siguiente comando:
-bashuvicorn src.inferencia:app --reload
+
+  bashuvicorn src.inferencia:app --reload
+
 Posterior a la confirmación de la ejecución, abre la URL http://127.0.0.1:8000/docs desde tu navegador de preferencia. Esta URL expone los siguientes métodos de la API:
 
 GET /                         Información de la API
+
 POST /detectar_fachadas_postes  Recibe una imagen y devuelve otra imagen con las detecciones de fachadas y postes realizadas
+
 POST /borrar_postes           Recibe una imagen, detecta los postes, los enmascara y aplica LaMa para eliminarlos, devolviendo la imagen final sin postes
 
 Ejemplo de POST /detectar_fachadas_postes:
@@ -123,58 +139,57 @@ Ejemplo de POST /borrar_postes:
 
 Despliega el método POST /borrar_postes y da click en Try it out, selecciona el archivo de imagen. La API realizará internamente los siguientes pasos:
 
-Detección de fachadas y postes con YOLO.
-Generación de una máscara binaria sobre las regiones de los postes detectados.
-Procesamiento con LaMa para reconstruir el fondo en las zonas enmascaradas.
-Retorno de la imagen resultante sin los postes.
+- Detección de fachadas y postes con YOLO.
+- Generación de una máscara binaria sobre las regiones de los postes detectados.
+- Procesamiento con LaMa para reconstruir el fondo en las zonas enmascaradas.
+- Retorno de la imagen resultante sin los postes.
 
 6. Resultados (métricas) y ejemplos de detección
 
 Para validar y obtener métricas con Ultralytics:
-pythonfrom ultralytics import YOLO
-model = YOLO('models/postes-yolo.pt')
-metrics = model.val(data='data.yaml')
-print(metrics)
+
+  pythonfrom ultralytics import YOLO
+  model = YOLO('models/postes-yolo.pt')
+  metrics = model.val(data='data.yaml')
+  print(metrics)
+  
 Con el dataset de 426 imágenes divididas en 352 para entrenamiento, 37 de validación y 37 de test. Se obtuvieron las siguientes métricas después del entrenamiento:
-<img width="2400" height="1200" alt="results" src="https://github.com/user-attachments/assets/0cc71254-0eef-44a8-abdf-526e7c6141d8" />
+
+<img width="4000" height="1200" alt="results" src="https://github.com/user-attachments/assets/bff4970c-c10b-458b-baf9-3427be78fa28" />
+
 Los resultados del entrenamiento muestran una disminución progresiva en las funciones de pérdida tanto en entrenamiento como en validación, lo que indica que el modelo está aprendiendo adecuadamente a localizar y clasificar las fachadas y postes presentes en las imágenes.
+
 Las métricas de evaluación presentan una tendencia creciente a lo largo de las épocas, alcanzando aproximadamente los siguientes valores:
 
-mAP@0.5 (Mean Average Precision): 0.5635912229825473
-Esta métrica mide el rendimiento global del modelo considerando precisión y recall al mismo tiempo.
-Precision: 0.6734037212645044
-Aproximadamente 67 de cada 100 detecciones realizadas por el modelo corresponden a fachadas o postes reales. El restante 33% corresponde a falsas detecciones.
-Recall: 0.47096774193548385
-El modelo detecta aproximadamente el 47% de todas las fachadas y postes reales presentes en las imágenes.
+- mAP@0.5 (Mean Average Precision): 0.5635912229825473 Esta métrica mide el rendimiento global del modelo considerando precisión y recall al mismo tiempo.
+- Precision: 0.6734037212645044. Aproximadamente 67 de cada 100 detecciones realizadas por el modelo corresponden a fachadas o postes reales. El restante 33% corresponde a falsas detecciones.
+- Recall: 0.47096774193548385. El modelo detecta aproximadamente el 47% de todas las fachadas y postes reales presentes en las imágenes.
 
 Esto evidencia una mejora gradual en la capacidad del modelo para detectar los objetos de interés, aunque todavía existen casos en los que algunas instancias reales no son detectadas.
+
 En general, el modelo muestra un comportamiento de aprendizaje estable y sin señales claras de sobreajuste, ya que las pérdidas de validación también disminuyen durante el entrenamiento. No obstante, los resultados sugieren que el desempeño podría mejorarse mediante el uso de más datos de entrenamiento, optimización de anotaciones o ajuste de hiperparámetros en el modelo basado en YOLOv8.
 A continuación, se observa la matriz de confusión obtenida:
-<img width="3000" height="2250" alt="confusion_matrix" src="https://github.com/user-attachments/assets/5a2ec5d8-4843-4993-a6d6-b582ca1072a8" />
-En esta matriz se puede apreciar que el modelo logra identificar correctamente un número considerable de instancias de fachadas y postes. Sin embargo, también se observan falsos positivos, donde el modelo predice la presencia de una clase cuando en realidad corresponde al fondo de la imagen, lo que indica cierta confusión entre estructuras del entorno y las clases de interés. Asimismo, se registran falsos negativos, es decir, casos en los que el modelo no logra detectar un objeto presente y lo clasifica como background. En conjunto, estos resultados sugieren que, aunque el modelo presenta un desempeño razonable, todavía existe margen de mejora en la discriminación entre las clases objetivo y el fondo.
 
+<img width="3000" height="2250" alt="confusion_matrix" src="https://github.com/user-attachments/assets/5a2ec5d8-4843-4993-a6d6-b582ca1072a8" />
+
+En esta matriz se puede apreciar que el modelo logra identificar correctamente un número considerable de instancias de fachadas y postes. Sin embargo, también se observan falsos positivos, donde el modelo predice la presencia de una clase cuando en realidad corresponde al fondo de la imagen, lo que indica cierta confusión entre estructuras del entorno y las clases de interés. Asimismo, se registran falsos negativos, es decir, casos en los que el modelo no logra detectar un objeto presente y lo clasifica como background. En conjunto, estos resultados sugieren que, aunque el modelo presenta un desempeño razonable, todavía existe margen de mejora en la discriminación entre las clases objetivo y el fondo.
 
 7. Limitaciones y pasos futuros recomendados
 
 Si el dataset es pequeño existe riesgo de sobreajuste. Recomendaciones:
 
-Aumentar datos (augmentations): rotaciones, flips, variaciones de brillo/contraste.
-Recolectar más imágenes en distintas condiciones (iluminación, ángulos, entornos).
-Realizar validación cruzada o usar técnicas de regularización.
-Evaluar mAP en múltiples umbrales (mAP@[.5:.95]).
+- Aumentar datos (augmentations): rotaciones, flips, variaciones de brillo/contraste.
+- Recolectar más imágenes en distintas condiciones (iluminación, ángulos, entornos).
+- Realizar validación cruzada o usar técnicas de regularización.
+- Evaluar mAP en múltiples umbrales (mAP@[.5:.95]).
 
 Calidad del inpainting con LaMa:
 
-El resultado de la eliminación de postes depende de la calidad de la máscara generada. Máscaras imprecisas o muy grandes pueden producir artefactos visuales.
-En escenas con fondos complejos (vegetación densa, edificios con texturas variadas), LaMa puede generar reconstrucciones menos realistas.
-Se recomienda refinar las máscaras de postes con técnicas de dilatación/erosión para mejorar los resultados del inpainting.
+- El resultado de la eliminación de postes depende de la calidad de la máscara generada. Máscaras imprecisas o muy grandes pueden producir artefactos visuales.
+- En escenas con fondos complejos (vegetación densa, edificios con texturas variadas), LaMa puede generar reconstrucciones menos realistas.
+- Se recomienda refinar las máscaras de postes con técnicas de dilatación/erosión para mejorar los resultados del inpainting.
 
-
-Despliegue:
-
-En producción, ejecutar Uvicorn sin --reload y orquestar con systemd/Docker/Gunicorn.
-Añadir tests automáticos y CI que verifiquen endpoints y una inferencia mínima.
-Considerar el uso de colas de tareas (Celery, RQ) para procesar las solicitudes de borrado de postes de forma asíncrona, dado el mayor costo computacional del pipeline YOLO + LaMa.
+----------------------------------------
 
 Fecha de actualización: Marzo 2026
 
