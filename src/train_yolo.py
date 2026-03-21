@@ -15,7 +15,7 @@ taller-yolo-casas/
 Este script:
 1. Entrena el modelo YOLO.
 2. Guarda resultados en models/detect/.
-3. Copia el best.pt final como models/house-yolo.pt.
+3. Copia el best.pt final como models/postes-yolo.pt.
 """
 
 import os
@@ -36,7 +36,7 @@ DETECT_DIR = os.path.join(MODELS_DIR, "detect")
 # Parámetros de entrenamiento
 WEIGHTS_DIR = os.path.join(MODELS_DIR, "weights")
 MODEL_BASE = os.path.join(WEIGHTS_DIR, "yolov8m-seg.pt")
-EPOCHS = 50
+EPOCHS = 60
 IMG_SIZE = 640
 BATCH_SIZE = 16
 
@@ -71,7 +71,7 @@ def train() -> None:
 def save_best_model(results) -> None:
     """
     Copia el best.pt generado por YOLO a:
-    models/house-yolo.pt
+    models/postes-yolo.pt
     """
 
     best_model_path = os.path.join(
@@ -80,7 +80,7 @@ def save_best_model(results) -> None:
         "best.pt"
     )
 
-    final_model_path = os.path.join(MODELS_DIR, "house-yolo.pt")
+    final_model_path = os.path.join(MODELS_DIR, "postes-yolo.pt")
 
     if os.path.exists(best_model_path):
         shutil.copy(best_model_path, final_model_path)

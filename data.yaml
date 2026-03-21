@@ -3,11 +3,11 @@ val: ../valid/images
 test: ../test/images
 
 nc: 2
-names: ['Casa', 'Poste']
+names: ['Fachada', 'Poste']
 
 roboflow:
   workspace: fabians-workspace-rryj9
   project: taller2_casas
-  version: 3
+  version: 7
   license: CC BY 4.0
-  url: https://universe.roboflow.com/fabians-workspace-rryj9/taller2_casas/dataset/3
+  url: https://universe.roboflow.com/fabians-workspace-rryj9/taller2_casas/dataset/7

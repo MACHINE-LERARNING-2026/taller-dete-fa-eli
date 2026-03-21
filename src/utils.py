@@ -3,9 +3,10 @@ UTILIDADES – Taller YOLO Detección de Casas
 ============================================
 Funciones auxiliares para:
   - Dibujar bounding boxes sobre imágenes
+  - Dibujar máscaras de segmentación
   - Convertir formatos de anotación
   - Visualizar resultados
-  - Parsear resultados del modelo YOLO
+  - Parsear resultados del modelo YOLO (detección y segmentación)
 """
 
 import cv2
@@ -25,6 +26,15 @@ GROSOR_CAJA         = 2                # Píxeles de grosor de la caja
 FUENTE_CV2          = cv2.FONT_HERSHEY_SIMPLEX
 ESCALA_FUENTE       = 0.6
 GROSOR_FUENTE       = 2
+
+# Colores de máscara por índice de clase (BGR)
+# Índice 0 = Fachada → azul semitransparente
+# Índice 1 = Poste   → rojo semitransparente
+COLOR_MASCARA: dict[int, tuple[int, int, int]] = {
+    0: (200, 80,  0),   # Fachada – azul
+    1: (0,   80, 200),  # Poste   – rojo
+}
+ALPHA_MASCARA = 0.45  # Opacidad del overlay de máscara
 
 
 # =====================================================
@@ -163,6 +173,134 @@ def dibujar_conteo_umbral(imagen: np.ndarray,cantidad: int,umbral: float) -> np.
     return imagen_anotada
 
 
+def generar_mascara_postes(
+    mascaras: list[np.ndarray],
+    ids_clase: list[int],
+    shape: tuple[int, int],
+    dilation_px: int = 20,
+) -> np.ndarray:
+    """
+    Combina todas las máscaras de postes en una única imagen binaria
+    y aplica dilatación para mejorar el resultado del inpainting.
+
+    LaMa reconstruye mejor cuando la máscara cubre ligeramente más
+    allá del borde del objeto — la dilatación logra ese efecto.
+
+    El resultado es una imagen en escala de grises donde:
+      - 255 (blanco) = región a eliminar (poste + margen dilatado)
+      - 0   (negro)  = fondo a conservar
+
+    Parámetros
+    ----------
+    mascaras    : Lista de arrays binarios (H, W) uint8 — uno por detección.
+    ids_clase   : Lista de índices de clase para cada máscara.
+    shape       : Tupla (alto, ancho) de la imagen original.
+    dilation_px : Radio de dilatación en píxeles (por defecto 20).
+
+    Retorna
+    -------
+    Array (H, W) uint8 con 255 en la región de postes dilatada y 0 en el resto.
+    """
+    alto, ancho = shape
+    mascara_combinada = np.zeros((alto, ancho), dtype=np.uint8)
+
+    for mask, id_clase in zip(mascaras, ids_clase):
+        if id_clase == 1:  # Poste
+            mascara_combinada = np.maximum(mascara_combinada, mask * 255)
+
+    if mascara_combinada.max() > 0 and dilation_px > 0:
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (dilation_px * 2 + 1, dilation_px * 2 + 1)
+        )
+        mascara_combinada = cv2.dilate(mascara_combinada, kernel)
+
+    return mascara_combinada
+
+
+def armar_collage(
+    imagen_deteccion: np.ndarray,
+    mascara: np.ndarray,
+    imagen_resultado: np.ndarray,
+    alto_etiqueta: int = 30,
+) -> np.ndarray:
+    """
+    Arma un collage horizontal con las tres imágenes del pipeline:
+    detección | máscara | resultado sin postes.
+
+    Parámetros
+    ----------
+    imagen_deteccion : Imagen BGR con máscaras y bounding boxes dibujados.
+    mascara          : Máscara binaria (H, W) uint8 de los postes.
+    imagen_resultado : Imagen BGR con los postes eliminados por inpainting.
+    alto_etiqueta    : Altura en píxeles de la barra de título de cada panel.
+
+    Retorna
+    -------
+    Imagen BGR con los tres paneles lado a lado y etiquetas en la parte superior.
+    """
+    etiquetas = ["Detección", "Máscara postes", "Sin postes (LaMa)"]
+
+    # Convertir máscara gris a BGR para poder concatenar con las otras
+    mascara_bgr = cv2.cvtColor(mascara, cv2.COLOR_GRAY2BGR)
+
+    paneles = [imagen_deteccion, mascara_bgr, imagen_resultado]
+    alto_img, ancho_img = paneles[0].shape[:2]
+
+    lienzos = []
+    for panel, etiqueta in zip(paneles, etiquetas):
+        # Redimensionar al mismo alto/ancho por si difieren
+        panel_r = cv2.resize(panel, (ancho_img, alto_img))
+
+        # Barra de título negra con texto blanco
+        barra = np.zeros((alto_etiqueta, ancho_img, 3), dtype=np.uint8)
+        cv2.putText(
+            barra, etiqueta,
+            (8, alto_etiqueta - 8),
+            FUENTE_CV2, 0.65, COLOR_TEXTO, 2, cv2.LINE_AA,
+        )
+        lienzos.append(np.vstack([barra, panel_r]))
+
+    return np.hstack(lienzos)
+
+
+def dibujar_mascaras(
+    imagen: np.ndarray,
+    mascaras: list[np.ndarray],
+    ids_clase: list[int],
+    alpha: float = ALPHA_MASCARA,
+) -> np.ndarray:
+    """
+    Superpone máscaras de segmentación sobre una imagen NumPy BGR.
+
+    Cada máscara se colorea según el índice de clase (ver COLOR_MASCARA).
+    Se aplica como overlay semitransparente para no ocultar la imagen original.
+
+    Parámetros
+    ----------
+    imagen     : Imagen NumPy BGR de fondo.
+    mascaras   : Lista de arrays binarios (H, W) uint8, uno por detección.
+                 Deben estar ya redimensionados al tamaño de la imagen.
+    ids_clase  : Lista de índices de clase correspondientes a cada máscara.
+    alpha      : Opacidad del overlay (0.0 = invisible, 1.0 = sólido).
+
+    Retorna
+    -------
+    Imagen anotada con máscaras superpuestas (copia, no modifica la original).
+    """
+    if not mascaras:
+        return imagen.copy()
+
+    imagen_anotada = imagen.copy()
+    overlay = imagen_anotada.copy()
+
+    for mask, id_clase in zip(mascaras, ids_clase):
+        color = COLOR_MASCARA.get(id_clase, (128, 128, 128))
+        overlay[mask == 1] = color
+
+    cv2.addWeighted(overlay, alpha, imagen_anotada, 1 - alpha, 0, imagen_anotada)
+    return imagen_anotada
+
+
 # =====================================================
 # SECCIÓN 2: CONVERSIÓN DE FORMATOS
 # =====================================================
@@ -215,7 +353,11 @@ def bytes_a_numpy(datos: bytes) -> np.ndarray:
 
 def parsear_resultados_yolo(resultado) -> dict:
     """
-    Extrae cajas, scores y clases del objeto Results de Ultralytics.
+    Extrae cajas, scores, clases y máscaras del objeto Results de Ultralytics.
+
+    Compatible con modelos de detección (solo cajas) y segmentación (cajas +
+    máscaras). Si el modelo no produce máscaras, la clave 'mascaras' será una
+    lista vacía.
 
     Parámetros
     ----------
@@ -223,7 +365,15 @@ def parsear_resultados_yolo(resultado) -> dict:
 
     Retorna
     -------
-    Diccionario con listas de cajas, scores, clases e índices de clase.
+    Diccionario con:
+      - cajas_xyxy : list[list[float]] – coordenadas [x1, y1, x2, y2]
+      - scores     : list[float]       – confianza de cada detección
+      - clases     : list[str]         – nombre de clase de cada detección
+      - ids_clase  : list[int]         – índice de clase de cada detección
+      - mascaras   : list[np.ndarray]  – máscaras binarias (H, W) uint8,
+                                         redimensionadas al tamaño original.
+                                         Lista vacía si el modelo no es seg.
+      - total      : int               – número total de detecciones
     """
     cajas_xyxy  = []
     scores      = []
@@ -247,10 +397,25 @@ def parsear_resultados_yolo(resultado) -> dict:
         nombre_clase = resultado.names.get(idx_clase, f"clase_{idx_clase}")
         clases.append(nombre_clase)
 
+    # ── Máscaras de segmentación (solo disponibles con modelos *-seg) ──────
+    mascaras = []
+    if resultado.masks is not None:
+        orig_h, orig_w = resultado.orig_shape
+        for mask_tensor in resultado.masks.data:
+            mask_np = mask_tensor.cpu().numpy()  # (H_modelo, W_modelo) float
+            mask_resized = cv2.resize(
+                mask_np,
+                (orig_w, orig_h),
+                interpolation=cv2.INTER_NEAREST,
+            )
+            mascaras.append((mask_resized > 0.5).astype(np.uint8))
+
     return {
         "cajas_xyxy": cajas_xyxy,
         "scores": scores,
         "clases": clases,
         "ids_clase": ids_clase,
+        "mascaras": mascaras,
         "total": len(cajas_xyxy),
     }
+
