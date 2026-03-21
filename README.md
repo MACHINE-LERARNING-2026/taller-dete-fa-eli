@@ -51,11 +51,12 @@ taller-yolo-fachadas/
 ├── valid/                  # Imágenes y etiquetas de validación generadas por Roboflow
 ├── requirements.txt        # Dependencias y librerías necesarias para la aplicación
 └── README.md               # Descripción del repositorio
+
 Descripción del dataset y origen de imágenes
 
 Archivo descriptor: data.yaml (contiene rutas a train, val, test y el número de clases nc).
-Clases: ['Fachada', 'Poste'] (2 clases) — confirma en data.yaml.
-Origen: dataset exportado desde Roboflow (ver data.yaml para detalles del workspace/proyecto/versión).
+Clases: ['Fachada', 'Poste'] (2 clases)
+Origen: dataset exportado desde Roboflow
 Estructura esperada de carpetas (relativa a la raíz del repo):
 
 train/images, train/labels
